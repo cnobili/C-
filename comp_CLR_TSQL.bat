@@ -1,0 +1,1 @@
+csc /target:library /out:CLR_TSQL.dll CLR_TSQL.cs
