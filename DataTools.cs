@@ -51,6 +51,7 @@ class DataTools
   private const String ACTION_EXCEL2TABLE_ADD_AUDIT_COLS         = "Excel2TableAddAuditCols";
   private const String ACTION_EXCEL_FILES_IN_DIR2TABLE           = "ExcelFilesInDir2Table";
   private const String ACTION_FILES_IN_DIR2TABLE                 = "FilesInDir2Table";
+  private const String ACTION_GEN_EXCEL_FROM_MSSQL               = "GenExcelFromMSSQL";
   
   public static void Usage()
   {
@@ -133,6 +134,10 @@ class DataTools
     Console.WriteLine();
     Console.WriteLine("  Note: the all files in directory must be in the same format");
     Console.WriteLine("  Note: the table has to exist already in the database");
+    Console.WriteLine();
+    Console.WriteLine(">{0} {1} oleDbConnectStr tableName excelFile excelWorksheet", PROGRAM_NAME, ACTION_GEN_EXCEL_FROM_MSSQL);
+    Console.WriteLine();
+    Console.WriteLine("  Example:\n  DataTools GenExcelFromMSSQL \"Provider=SQLOLEDB;Data Source=theServer;Initial Catalog=theDB;Integrated Security=SSPI;\" tableName excelFile");
     Console.WriteLine();
     Console.WriteLine("------------------------------------------------------------------------------------------------");
     Console.WriteLine();    
@@ -881,6 +886,26 @@ class DataTools
       }
      
       DataLib.DataUtil.FilesInDir2Table(directory, filePattern, hdr, schema, tableName, sqlConnStr);
+    }
+    else if ( action.ToUpper().Equals(ACTION_GEN_EXCEL_FROM_MSSQL.ToUpper()) )
+    {
+      if (args.Length != 4)
+      {
+        Console.WriteLine("\nWrong number of arguments for action = {0}", action);
+        Usage();
+        return;
+      }
+      
+      String connectStr       = args[1];
+      String tableName        = args[2];
+      String excelFile        = args[3];
+           
+      Console.WriteLine("Calling GenExcelFromMSSQL");
+      Console.WriteLine("  connectStr = {0}", connectStr);
+      Console.WriteLine("  tableName  = {0}", tableName);
+      Console.WriteLine("  excelFile      = {0}", excelFile);
+      
+      DataLib.DataUtil.GenExcelFromMSSQL(connectStr, tableName, excelFile);
     }
     else
     {

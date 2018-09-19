@@ -21,6 +21,7 @@ using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
 
+
 namespace DataLib
 {
 
@@ -2206,6 +2207,137 @@ namespace DataLib
     }
   
   } // AddAuditInfoToFilesInDir()
+  
+  /*
+   * GenExcelFromAccess
+   *
+   * Create Excel file from a SQL Server table.
+   */
+  public static void GenExcelFromMSSQL(String oleDbConnectStr, String tableName, String excelFile)
+  {
+    String fileNameNoExt = Path.GetFileNameWithoutExtension(excelFile);
+    
+    OleDbConnection con = new OleDbConnection(oleDbConnectStr);
+    con.Open();
+    Console.WriteLine("\nMade the connection to the database");
+    
+    OleDbCommand cmd = con.CreateCommand();
+    cmd.CommandText = "select * from " + tableName;
+  
+    OleDbDataAdapter adapter = new OleDbDataAdapter();
+    adapter.SelectCommand = cmd;
+  
+    DataSet ds = new DataSet();
+    adapter.Fill(ds, tableName);
+    //ds.WriteXml(@"my.csv");
+    DataTable dt = ds.Tables[0];
+          
+    Console.WriteLine("{0} rows selected", dt.Rows.Count );
+        
+    Console.WriteLine("Columns are:");
+    foreach(DataColumn col in dt.Columns)
+    {
+      Console.WriteLine(col.ColumnName.ToString());
+    }
+    
+    // Bind table data to Stream Writer to export data to respective folder
+    
+    StreamWriter wr = new StreamWriter(fileNameNoExt + ".csv");
+
+    // Write Columns to file
+
+    for (int i = 0; i < dt.Columns.Count; i++)
+    {
+      if (i == dt.Columns.Count - 1)
+        wr.Write(dt.Columns[i].ToString().ToUpper());
+      else
+        wr.Write(dt.Columns[i].ToString().ToUpper() + ",");
+
+    }
+    wr.WriteLine();
+
+    //write rows to file
+    for (int i = 0; i < (dt.Rows.Count); i++)
+    {
+      for (int j = 0; j < dt.Columns.Count; j++)
+      {
+        if (dt.Rows[i][j] != null)
+        {
+          if (j == dt.Columns.Count - 1)
+            wr.Write("\"" + Convert.ToString(dt.Rows[i][j]) + "\"");
+          else
+            wr.Write("\"" + Convert.ToString(dt.Rows[i][j]) + "\"" + ",");
+        }
+        //else
+        //{
+        //  wr.Write(",");
+        //}
+      }
+      wr.WriteLine();
+    }
+    
+    wr.Close();  
+            
+    string FileDelimiter = ","; 
+    string CreateTableStatement = "";
+    string ColumnList = "";        
+    
+    //Read first line (Header)
+    System.IO.StreamReader file = new System.IO.StreamReader(fileNameNoExt + ".csv");
+    CreateTableStatement = (" Create Table [" + fileNameNoExt + "] ([" + file.ReadLine().Replace(FileDelimiter, "] Text,[")) + "] Text)";
+    file.Close();
+    Console.WriteLine(CreateTableStatement);
+    
+    File.Delete(excelFile);
+                       
+    // Construct ConnectionString for Excel
+    string connstring = "Provider=Microsoft.ACE.OLEDB.12.0;" + "Data Source=" + fileNameNoExt + ";" + "Extended Properties=\"Excel 12.0 Xml;HDR=YES;\"";
+    OleDbConnection Excel_OLE_Con = new OleDbConnection();
+    OleDbCommand Excel_OLE_Cmd = new OleDbCommand();
+    
+    Excel_OLE_Con.ConnectionString = connstring;
+    
+    Console.WriteLine("Try and Open connection");
+    Excel_OLE_Con.Open();
+    Excel_OLE_Cmd.Connection = Excel_OLE_Con;
+    
+    // Use OLE DB Connection and Create Excel Sheet
+    Console.WriteLine("Execute create table statement for excel file ...");
+    Excel_OLE_Cmd.CommandText = CreateTableStatement;
+    Excel_OLE_Cmd.ExecuteNonQuery();
+    Console.WriteLine("Completed Execute create table statement for excel file ...");
+        
+    //Writing Data of File to Excel Sheet in Excel File
+    string line;
+    int counter = 0;
+    
+    System.IO.StreamReader SourceFile = new System.IO.StreamReader(fileNameNoExt + ".csv");
+    
+    while ((line = SourceFile.ReadLine()) != null)
+    {
+      if (counter == 0)
+      {
+        ColumnList = "[" + line.Replace(FileDelimiter, "],[") + "]";
+        Console.WriteLine("ColumnList = {0}", ColumnList);
+      }
+      else
+      {
+        //string query = "Insert into [" + fileNameNoExt + "] (" + ColumnList  + ") VALUES('" + line.Replace(FileDelimiter, "','") + "')";
+        string query = "Insert into [" + fileNameNoExt + "] (" + ColumnList  + ") VALUES(" + line.Replace("\"", "'") + ")";
+        //Console.WriteLine(query);
+        var command = query;
+        Excel_OLE_Cmd.CommandText = command;
+        Excel_OLE_Cmd.ExecuteNonQuery();
+      }
+      counter++;
+    }
+    Excel_OLE_Con.Close();
+    SourceFile.Close();
+    File.Delete(fileNameNoExt + ".txt");
+    
+    con.Close();
+  
+  } // GenExcelFromMSSQL()
   
 
 } // DataUtil
