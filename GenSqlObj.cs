@@ -12,7 +12,6 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
-using CodeLibrary;
 
 namespace GenSqlObj
 {
@@ -24,8 +23,6 @@ class GenSqlObj
    * Private Data
    */
   private static String dbServer;
-  private static String dbUser;
-  private static String dbPass;
   private static String dbCatalog;
   private static String dbSchema;
   private static String outputDir;
@@ -42,22 +39,7 @@ class GenSqlObj
   public GenSqlObj()
   {
     dbServer   = ConfigurationManager.AppSettings["dbServer"];
-    dbUser     = ConfigurationManager.AppSettings["dbUser"];
-    
-    if (dbPass == null)
-    {
-      dbPass     = ConfigurationManager.AppSettings["dbPass"];
-      if (dbPass.Equals(""))
-      {
-        Console.Write("Enter dbUser password:");
-        dbPass = Util.ReadPassword();
-      }
-      else
-      {
-        dbPass = Util.Decrypt(dbPass);
-      }
-    }
-    
+       
     dbCatalog  = ConfigurationManager.AppSettings["dbCatalog"];
     dbSchema   = ConfigurationManager.AppSettings["dbSchema"];
     outputDir  = ConfigurationManager.AppSettings["outputDir"];
@@ -119,11 +101,12 @@ class GenSqlObj
 
   public void GenProcs(SqlConnection connection)
   {
-		int n = 0;
-		StreamWriter pw;
-		String filename;
-		String objCode;
+	int n = 0;
+	StreamWriter pw;
+	String filename;
+	String objCode;
 
+    /*
     string queryStr = "select " +
                       "  i.routine_name " +
                       ", object_definition(object_id(i.routine_name)) as obj_code " +
@@ -134,13 +117,29 @@ class GenSqlObj
                       "  and i.routine_schema = @schema " +
                       "order by " +
                       "  routine_type ";
-
+    */
+    string queryStr = "select " +
+                      "  pr.name " +
+                      ", mod.definition as obj_code " +
+                      "from " +
+                      "  sys.procedures pr " +
+                      "  inner join " +
+                      "  sys.sql_modules mod " +
+                      "  on pr.object_id = mod.object_id " +
+                      "  inner join " +
+                      "  sys.schemas s " +
+                      "  on s.schema_id = pr.schema_id  " +
+                      "  where 1 = 1 " +
+                      "    and pr.type = 'P' " +
+                      "    and pr.is_ms_shipped = 0 " +
+                      "    and s.name = @schema ";
+                      
     string paramCatalog = dbCatalog;
     string paramSchema  = dbSchema;
 
     SqlCommand command = new SqlCommand(queryStr, connection);
     command.Parameters.AddWithValue("@schema", paramSchema);
-    command.Parameters.AddWithValue("@database", paramCatalog);
+    //command.Parameters.AddWithValue("@database", paramCatalog);
 
     SqlDataReader reader = command.ExecuteReader();
 
@@ -170,6 +169,7 @@ class GenSqlObj
 		String filename;
 		String objCode;
 
+    /*
     string queryStr = "select " +
                       "  i.table_name " +
                       ", object_definition(object_id(i.table_name)) as obj_code " +
@@ -178,13 +178,30 @@ class GenSqlObj
                       "where 1 = 1 " +
                       "  and i.table_catalog = @database " +
                       "  and i.table_schema = @schema ";
+    */
+    string queryStr = "select " +
+                      "  v.name " +
+                      ", mod.definition as obj_code " +
+                      "from " +
+                      "  sys.views v " +
+                      "  inner join " +
+                      "  sys.sql_modules mod " +
+                      "  on v.object_id = mod.object_id " +
+                      "  inner join " +
+                      "  sys.schemas s " +
+                      "  on s.schema_id = v.schema_id  " +
+                      "  where 1 = 1 " +
+                      "    and v.type = 'V' " +
+                      "    and v.is_ms_shipped = 0 " +
+                      "    and s.name = @schema ";
+    
 
     string paramCatalog = dbCatalog;
     string paramSchema  = dbSchema;
 
     SqlCommand command = new SqlCommand(queryStr, connection);
     command.Parameters.AddWithValue("@schema", paramSchema);
-    command.Parameters.AddWithValue("@database", paramCatalog);
+    //command.Parameters.AddWithValue("@database", paramCatalog);
 
     SqlDataReader reader = command.ExecuteReader();
 
@@ -213,40 +230,36 @@ class GenSqlObj
   public static void Main (String [] args)
   {
     // Get filename on the command line
-    if ( !(args.Length == 1 || args.Length == 2) )
+    if (args.Length != 1)
     {
-      Console.WriteLine("Usage:GenSqlObj configFile [password]");
+      Console.WriteLine("Usage:GenSqlObj configFile");
       Console.WriteLine("");
       Console.WriteLine("  configFile - configuration file");
-      Console.WriteLine("  password   - optional cleartext password");
       return;
     }
     String configFile = args[0];
-    if (args.Length == 2) dbPass = args[1];
-
-	  if (File.Exists(configFile))
-	  {
-	    Console.WriteLine("Using Configuration file = <{0}>", configFile);
-	  }
-	  else
-	  {
-	    Console.WriteLine("filename = <{0}> not found", configFile);
-	    return;
-	  }
+  	if (File.Exists(configFile))
+	{
+	  Console.WriteLine("Using Configuration file = <{0}>", configFile);
+	}
+	else
+	{
+	  Console.WriteLine("filename = <{0}> not found", configFile);
+	  return;
+	}
 
     AppDomain.CurrentDomain.SetData("APP_CONFIG_FILE", configFile);
     GenSqlObj dmp = new GenSqlObj();
 
-    //String connStr = "Data Source=" + dbServer + ";Initial Catalog=" + dbCatalog +
-    //  ";Integrated Security=true";
-    String connStr = "user id=" + dbUser + ";password=" + dbPass + ";server=" + dbServer + ";database=" + dbCatalog;
+    String connStr = "Data Source=" + dbServer + ";Initial Catalog=" + dbCatalog + ";Integrated Security=true";
+    //String connStr = "user id=" + dbUser + ";password=" + dbPass + ";server=" + dbServer + ";database=" + dbCatalog;
 
     using (SqlConnection connection = new SqlConnection(connStr))
     {
       connection.Open();
-      //dmp.GenObjs(connection);
-      dmp.GenProcs(connection);
-      dmp.GenViews(connection);
+      dmp.GenObjs(connection);
+      //dmp.GenProcs(connection);
+      //dmp.GenViews(connection);
       connection.Close();
 
       Console.WriteLine("Done!");
