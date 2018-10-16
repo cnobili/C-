@@ -2213,7 +2213,7 @@ namespace DataLib
    *
    * Create Excel file from a SQL Server table.
    */
-  public static void GenExcelFromMSSQL(String oleDbConnectStr, String tableName, String excelFile)
+  public static void GenExcelFromMSSQL(String oleDbConnectStr, String selectStmt, String excelFile)
   {
     String fileNameNoExt = Path.GetFileNameWithoutExtension(excelFile);
     
@@ -2222,13 +2222,14 @@ namespace DataLib
     Console.WriteLine("\nMade the connection to the database");
     
     OleDbCommand cmd = con.CreateCommand();
-    cmd.CommandText = "select * from " + tableName;
+    //cmd.CommandText = "select * from " + tableName;
+    cmd.CommandText = selectStmt;
   
     OleDbDataAdapter adapter = new OleDbDataAdapter();
     adapter.SelectCommand = cmd;
   
     DataSet ds = new DataSet();
-    adapter.Fill(ds, tableName);
+    adapter.Fill(ds, "X");
     //ds.WriteXml(@"my.csv");
     DataTable dt = ds.Tables[0];
           
@@ -2249,9 +2250,9 @@ namespace DataLib
     for (int i = 0; i < dt.Columns.Count; i++)
     {
       if (i == dt.Columns.Count - 1)
-        wr.Write(dt.Columns[i].ToString().ToUpper());
+        wr.Write(dt.Columns[i].ToString().ToUpper().Replace(".", "_")); // replace any periods in column name
       else
-        wr.Write(dt.Columns[i].ToString().ToUpper() + ",");
+        wr.Write(dt.Columns[i].ToString().ToUpper().Replace(".", "_") + ",");
 
     }
     wr.WriteLine();
@@ -2264,9 +2265,9 @@ namespace DataLib
         if (dt.Rows[i][j] != null)
         {
           if (j == dt.Columns.Count - 1)
-            wr.Write("\"" + Convert.ToString(dt.Rows[i][j]) + "\"");
+            wr.Write("\"" + CleanString( Convert.ToString(dt.Rows[i][j]) ) + "\"");
           else
-            wr.Write("\"" + Convert.ToString(dt.Rows[i][j]) + "\"" + ",");
+            wr.Write("\"" + CleanString( Convert.ToString(dt.Rows[i][j]) ) + "\"" + ",");
         }
         //else
         //{
@@ -2318,12 +2319,14 @@ namespace DataLib
       if (counter == 0)
       {
         ColumnList = "[" + line.Replace(FileDelimiter, "],[") + "]";
+        ColumnList = ColumnList.Replace(".", "_"); // columns with period in name cause Invalid bracking of name error
         Console.WriteLine("ColumnList = {0}", ColumnList);
       }
       else
       {
         //string query = "Insert into [" + fileNameNoExt + "] (" + ColumnList  + ") VALUES('" + line.Replace(FileDelimiter, "','") + "')";
-        string query = "Insert into [" + fileNameNoExt + "] (" + ColumnList  + ") VALUES(" + line.Replace("\"", "'") + ")";
+        //string query = "Insert into [" + fileNameNoExt + "] (" + ColumnList  + ") VALUES(" + line.Replace("\"", "'") + ")";
+        string query = "Insert into [" + fileNameNoExt + "] (" + ColumnList  + ") VALUES(" + line + ")";
         //Console.WriteLine(query);
         var command = query;
         Excel_OLE_Cmd.CommandText = command;
