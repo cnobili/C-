@@ -224,6 +224,67 @@ class GenSqlObj
 
 	} // GenViews()
 
+  public void GenTables(SqlConnection connection, String connStr)
+  {
+    int n = 0;
+    StreamWriter pw;
+    String filename;
+            
+    string queryStr = "select " +
+                      "  i.table_schema " +
+                      ", i.table_name " +
+                      "from information_schema.tables i " +
+                      "where 1 = 1 " +
+                      "  and i.table_type = 'BASE TABLE' " +
+                      "  and i.table_schema = @schema"
+                      ;
+                      
+    string paramSchema  = dbSchema;
+
+    SqlCommand command = new SqlCommand(queryStr, connection);
+    command.Parameters.AddWithValue("@schema", paramSchema);
+
+    Console.WriteLine("GenTables(): ExecuteReader");
+    
+    SqlDataReader reader = command.ExecuteReader();
+
+    Console.WriteLine("\nGenerate SQL code for tables in schema = {0}", dbSchema);
+    SqlConnection conn = new SqlConnection(connStr);
+    conn.Open();
+    
+    while (reader.Read())
+    {
+      filename = reader[1] + ".sql";
+      Console.WriteLine("  Writing out to file {0}", filename);
+      n++;
+      pw = new StreamWriter(outputDir + filename);
+                 
+      string qry = "select name, system_type_name from sys.dm_exec_describe_first_result_set('select * from " + reader[0] + "." + reader[1] + "', null, 1) order by column_ordinal";
+            
+      SqlCommand cmd = new SqlCommand(qry, conn);
+      SqlDataReader rdr = cmd.ExecuteReader();
+      
+      pw.WriteLine("create table " + reader[0] + "." + reader[1]);
+      pw.WriteLine("(");
+            
+      string comma = " ";
+      while (rdr.Read())
+      {
+        pw.WriteLine(comma + " " + rdr[0].ToString().PadRight(60) + " " + rdr[1]);
+        comma = ",";
+      }
+      rdr.Close();
+      pw.WriteLine(")");
+      
+      pw.Close();
+    }
+    
+    conn.Close();
+    reader.Close();
+    Console.WriteLine("\nTotal Tables = {0}\n", n);
+
+    } // GenTables()
+
   /*
    * Main() - Entry point of program.
    */
@@ -258,6 +319,7 @@ class GenSqlObj
     {
       connection.Open();
       dmp.GenObjs(connection);
+      dmp.GenTables(connection, connStr);
       //dmp.GenProcs(connection);
       //dmp.GenViews(connection);
       connection.Close();
