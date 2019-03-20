@@ -149,12 +149,14 @@ namespace DataLib
     {
       if (columns.GetUpperBound(0) == Array.IndexOf(columns, columnName))
       {
-        sql.Append(columnName);
+        //sql.Append("[" + columnName + "]");
+        sql.Append(columnName.Replace(" ", "_"));
         sql.Append(" VARCHAR(8000))");
       }
       else
       {
-        sql.Append(columnName);
+        //sql.Append("[" + columnName + "]");
+        sql.Append(columnName.Replace(" ", "_"));
         sql.Append(" VARCHAR(8000),");
       }
     }
@@ -164,6 +166,8 @@ namespace DataLib
     sql.Length--;
     sql.Append(")"); // put back the closing parenthesis on the data type
     sql.Append(")"); // final closing parenthesis for create table statemetn
+    
+    //Console.WriteLine(sql.ToString());
      
     var connection = new SqlConnection(connectString);
     var command = new SqlCommand(sql.ToString(), connection);
@@ -252,9 +256,9 @@ namespace DataLib
       for (int i =0; i < colName.Count; i++)
       {
         if (i == 0)
-          ddl = ddl + "  " + colName[i];
+          ddl = ddl + "  [" + colName[i] + "]";
         else
-          ddl = ddl + ", " + colName[i];
+          ddl = ddl + ", [" + colName[i] + "]";
 
         //if (colType[i].ToString().Equals("System.Double") || colType[i].ToString().Equals("Decimal"))
         //  ddl = ddl + " decimal(20,4) \n";
