@@ -485,6 +485,114 @@ namespace DataLib
 
     } // GenSelectStmt()
 
+    public static void MSSQLGenCreateTableFromQuery(String outputfile, String query, String tableName, String server, String database, String user , String pass)
+    {
+      String dbConnectStr;
+      StreamWriter pw = null;
+      SqlConnection dbConn = null;
+      
+      if (user == null)
+      {
+        dbConnectStr = "Server=" + server + ";Database=" + database + ";Trusted_Connection=True";
+      }
+      else
+      {
+        dbConnectStr = "Server=" + server + ";Database=" + database + ";user id=" + user + ";password=" + pass;
+      }
+
+      query = query.Replace("select", "select top 1 ");
+      try
+      {
+        dbConn = new SqlConnection(dbConnectStr);
+        dbConn.Open();
+        Console.WriteLine("Opened database connection");
+        SqlCommand cmdSQL = new SqlCommand(query, dbConn);
+        SqlDataReader dataReader = cmdSQL.ExecuteReader();
+        int fieldCount = dataReader.FieldCount;
+
+        String fieldSep = null;
+
+        Console.WriteLine("Execute SQL = " + query);
+        Console.WriteLine("Number of columns in select stmt = " + fieldCount);
+
+        pw = new StreamWriter(outputfile);
+        pw.WriteLine("create table " + tableName);
+        pw.WriteLine("(");
+
+        fieldSep = "  ";
+        //for (int i = 0; i < fieldCount; i++)
+        //{
+        //  pw.WriteLine(fieldSep + dataReader.GetName(i) + " " + dataReader.GetDataTypeName(i));
+        //  fieldSep = ", ";
+        //}
+        using (var schemaTable = dataReader.GetSchemaTable())
+        {
+          foreach (DataRow row in schemaTable.Rows)
+          {
+            string ColumnName      = row.Field<string>("ColumnName");
+            string DataTypeName    = row.Field<string>("DataTypeName");
+            short NumericPrecision = row.Field<short>("NumericPrecision");
+            short NumericScale     = row.Field<short>("NumericScale");
+            int ColumnSize         = row.Field<int>("ColumnSize");
+            Console.WriteLine("Column: {0} Type: {1} Precision: {2} Scale: {3} ColumnSize {4}", ColumnName, DataTypeName, NumericPrecision, NumericScale, ColumnSize);
+            
+            if (DataTypeName.Equals("date") || DataTypeName.Equals("datetime") || DataTypeName.Equals("datetime2") || DataTypeName.Equals("int") || DataTypeName.Equals("bigint"))
+            {
+              pw.WriteLine(fieldSep + ColumnName + " " + DataTypeName);
+              fieldSep = ", ";
+            }
+            else if (DataTypeName.Equals("decimal"))
+            {
+                pw.WriteLine(fieldSep + ColumnName + " numeric(38, 4)");
+                fieldSep = ", ";
+            }
+            else if (DataTypeName.Equals("char"))
+            {
+              if (ColumnSize == 1)
+              {
+                pw.WriteLine(fieldSep + ColumnName + " " + DataTypeName + "(1)");
+                fieldSep = ", ";
+              }
+              else
+              {
+                pw.WriteLine(fieldSep + ColumnName + " " + DataTypeName + "(" + (ColumnSize > NumericPrecision ? ColumnSize : NumericPrecision) + ")");
+                fieldSep = ", ";
+              }
+            }
+            else if (DataTypeName.Equals("varchar"))
+            {
+               if (ColumnSize > 8000)
+               {
+                 pw.WriteLine(fieldSep + ColumnName + " " + DataTypeName + "(max)");
+                 fieldSep = ", ";
+               }
+               else
+                 pw.WriteLine(fieldSep + ColumnName + " " + DataTypeName + "(8000)");
+               fieldSep = ", ";
+            }
+            else
+            {
+               pw.WriteLine(fieldSep + ColumnName + " UnknownDataType");
+               fieldSep = ", ";
+            }
+            
+          }
+        }
+        pw.WriteLine(")");
+        pw.WriteLine(";");
+      }
+      catch(Exception e)
+      {
+        Console.WriteLine(e.ToString());
+      }
+      finally
+      {
+        pw.Close();
+        dbConn.Close();
+      }
+
+    } // MSSQLGenCreateTableFromQuery()
+
     public static void OraGenExtTableDDL(String filePath, String filename, String colDelimiter, String recDelimiter, 
                                    String table, String dirObj, String addRecNum, String outputDir)
     {

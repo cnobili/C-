@@ -37,6 +37,7 @@ class DataTools
   private const String ACTION_GEN_TSQL_FORMAT_FILE               = "GenTsqlFormatFile";
   private const String ACTION_GEN_TSQL_READ_FILE_AS_TABLE        = "GenTsqlReadFileAsTable";
   private const String ACTION_GEN_SELECT_STMT                    = "GenSelectStmt";
+  private const String ACTION_MSSQL_GEN_CREATE_TABLE_FROM_QUERY  = "MSSQLGenCreateTableFromQuery";
   private const String ACTION_EXCEL2CSV                          = "Excel2Csv";
   private const String ACTION_EXCEL2CSV_CELLS                    = "Excel2CsvCells";
   private const String ACTION_EXCEL2CSV_RANGE                    = "Excel2CsvNamedRange";
@@ -53,7 +54,7 @@ class DataTools
   private const String ACTION_FILES_IN_DIR2TABLE                 = "FilesInDir2Table";
   private const String ACTION_GEN_EXCEL_FROM_MSSQL               = "GenExcelFromMSSQL";
   private const String ACTION_GEN_EXCEL_FROM_MSSQL_QUERY         = "GenExcelFromMSSQL_FromQuery";
-  
+    
   public static void Usage()
   {
     Console.WriteLine();
@@ -99,6 +100,8 @@ class DataTools
     Console.WriteLine(">{0} {1} filename columnDelimiter rowDelimiter", PROGRAM_NAME, ACTION_GEN_TSQL_READ_FILE_AS_TABLE);
     Console.WriteLine();
     Console.WriteLine(">{0} {1} outputfile schemaName tableName server database [user] [pass]", PROGRAM_NAME, ACTION_GEN_SELECT_STMT);
+    Console.WriteLine();
+    Console.WriteLine(">{0} {1} outputfile query tableName server database [user] [pass]", PROGRAM_NAME, ACTION_MSSQL_GEN_CREATE_TABLE_FROM_QUERY);
     Console.WriteLine();
     Console.WriteLine(">{0} {1} csvFile includeHeaderFlg(T|F) delimiter excelFile worksheet worksheetHasHeaderFlg(T|F)", PROGRAM_NAME, ACTION_EXCEL2CSV);
     Console.WriteLine();
@@ -500,6 +503,32 @@ class DataTools
       
       Console.WriteLine("Writing out SQL Statement to outputFile = {0}", outputFile);
       DataLib.DataUtil.GenSelectStmt(outputFile, schema, table, server, database, user , pass);
+    }
+    else if ( action.ToUpper().Equals(ACTION_MSSQL_GEN_CREATE_TABLE_FROM_QUERY.ToUpper()) )
+    {
+      if ( !(args.Length >= 6 && args.Length <= 8) )
+      {
+        Console.WriteLine("\nWrong number of arguments for action = {0}", action);
+        Usage();
+        return;
+      }
+      
+      String outputFile   = args[1];
+      String query        = args[2];
+      String table        = args[3];
+      String server       = args[4];
+      String database     = args[5];
+      String user         = null;
+      String pass         = null;
+      
+      if (args.Length > 6)
+      {
+        user = args[6];
+        pass = args[7];
+      }
+      
+      Console.WriteLine("Writing out create table DDL statement to outputFile = {0}", outputFile);
+      DataLib.DataUtil.MSSQLGenCreateTableFromQuery(outputFile, query, table, server, database, user , pass);
     }
     else if ( action.ToUpper().Equals(ACTION_EXCEL2CSV.ToUpper()) )
     {
