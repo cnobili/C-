@@ -593,6 +593,270 @@ namespace DataLib
 
     } // MSSQLGenCreateTableFromQuery()
 
+    // Overloaded version to run create table DDL 
+    public static void MSSQLGenCreateTableFromQuery(String srcConnStr, String destConnStr, String query, String schemaName, String tableName)
+    {
+      int count;
+      StringBuilder sb = new StringBuilder();
+      SqlConnection dstConn = new SqlConnection(destConnStr);
+      
+      Console.WriteLine("In MSSQLGenCreateTableFromQuery() - check if table needs to be created in destination DB");
+      dstConn.Open();
+      
+      // Does table exist already?
+      SqlCommand cmdDst = new SqlCommand();
+      cmdDst.CommandTimeout = 0;
+      cmdDst.Connection = dstConn;
+      cmdDst.CommandText = 
+        "select " +
+        "  count(*) " +
+        "from information_schema.tables " +
+        "where table_schema = '" + schemaName + "'" +
+        "  and table_name = '" + tableName + "'"
+      ;
+      count = System.Convert.ToInt32(cmdDst.ExecuteScalar());
+            
+      if (count != 0) //table exists already?
+      {
+        dstConn.Close();
+        return;
+      }
+      else
+      {
+        Console.WriteLine("Table = {0} does not exist, create in destination database.", schemaName + "." + tableName);
+      }
+
+      SqlConnection srcConn = new SqlConnection(srcConnStr);
+      srcConn.Open();
+      SqlCommand cmdSrc = new SqlCommand();
+      cmdSrc.CommandTimeout = 0;
+      cmdSrc.Connection = srcConn;
+      query = query.Replace("select", "select top 1 ");
+      cmdSrc.CommandText = query;
+      
+      try
+      {
+        SqlDataReader dataReader = cmdSrc.ExecuteReader();
+        int fieldCount = dataReader.FieldCount;
+
+        String fieldSep = null;
+
+        Console.WriteLine("Execute SQL = " + query);
+        Console.WriteLine("Number of columns in select stmt = " + fieldCount);
+
+        sb.Append("create table " + schemaName + "." + tableName);
+        sb.Append("(");
+
+        fieldSep = "  ";
+        using (var schemaTable = dataReader.GetSchemaTable())
+        {
+          foreach (DataRow row in schemaTable.Rows)
+          {
+            string ColumnName      = row.Field<string>("ColumnName");
+            string DataTypeName    = row.Field<string>("DataTypeName");
+            short NumericPrecision = row.Field<short>("NumericPrecision");
+            short NumericScale     = row.Field<short>("NumericScale");
+            int ColumnSize         = row.Field<int>("ColumnSize");
+            Console.WriteLine("Column: {0} Type: {1} Precision: {2} Scale: {3} ColumnSize {4}", ColumnName, DataTypeName, NumericPrecision, NumericScale, ColumnSize);
+            
+            if (DataTypeName.Equals("date") || DataTypeName.Equals("datetime") || DataTypeName.Equals("datetime2") || DataTypeName.Equals("int") || DataTypeName.Equals("bigint"))
+            {
+              sb.Append(fieldSep + ColumnName + " " + DataTypeName);
+              fieldSep = ", ";
+            }
+            else if (DataTypeName.Equals("decimal"))
+            {
+                sb.Append(fieldSep + ColumnName + " numeric(38, 4)");
+                fieldSep = ", ";
+            }
+            else if (DataTypeName.Equals("char"))
+            {
+              if (ColumnSize == 1)
+              {
+                sb.Append(fieldSep + ColumnName + " " + DataTypeName + "(1)");
+              }
+              else
+              {
+                sb.Append(fieldSep + ColumnName + " " + DataTypeName + "(" + (ColumnSize > NumericPrecision ? ColumnSize : NumericPrecision) + ")");
+              }
+              fieldSep = ", ";
+            }
+            else if (DataTypeName.Equals("varchar"))
+            {
+               if (ColumnSize > 8000)
+               {
+                 sb.Append(fieldSep + ColumnName + " " + DataTypeName + "(max)");
+               }
+               else
+               {
+                 sb.Append(fieldSep + ColumnName + " " + DataTypeName + "(8000)");
+               }
+               fieldSep = ", ";
+            }
+            else
+            {
+               Console.WriteLine("Unknown datatype = {0}", DataTypeName);
+               sb.Append(fieldSep + ColumnName + " UnknownDataType");
+               fieldSep = ", ";
+            }
+            
+          }
+        }
+        sb.Append(")");
+        sb.Append(";");
+      }
+      catch(Exception e)
+      {
+        Console.WriteLine(e.ToString());
+      }
+      finally
+      {
+        srcConn.Close();
+        cmdDst.CommandText = sb.ToString();
+        cmdDst.ExecuteNonQuery();
+        dstConn.Close();
+      }
+
+    } // MSSQLGenCreateTableFromQuery()
+
+    public static void ODBCGenCreateTableFromQuery(String srcConnStr, String destConnStr, String query, String schemaName, String tableName)
+    {
+      int count;
+      StringBuilder sb = new StringBuilder();
+      SqlConnection dstConn = new SqlConnection(destConnStr);
+      
+      Console.WriteLine("In ODBCGenCreateTableFromQuery() - check if table needs to be created in destination DB");
+      dstConn.Open();
+      
+      // Does table exist already?
+      SqlCommand cmdDst = new SqlCommand();
+      cmdDst.CommandTimeout = 0;
+      cmdDst.Connection = dstConn;
+      cmdDst.CommandText = 
+        "select " +
+        "  count(*) " +
+        "from information_schema.tables " +
+        "where table_schema = '" + schemaName + "'" +
+        "  and table_name = '" + tableName + "'"
+      ;
+      count = System.Convert.ToInt32(cmdDst.ExecuteScalar());
+            
+      if (count != 0) //table exists already?
+      {
+        dstConn.Close();
+        return;
+      }
+      else
+      {
+        Console.WriteLine("Table = {0} does not exist, create in destination database.", schemaName + "." + tableName);
+      }
+
+      OdbcConnection srcConn = new OdbcConnection(srcConnStr);
+      srcConn.Open();
+      OdbcCommand cmdSrc = new OdbcCommand();
+      cmdSrc.CommandTimeout = 0;
+      cmdSrc.Connection = srcConn;
+      query = query.Replace("select", "select top 1 ");
+      cmdSrc.CommandText = query;
+      
+      try
+      {
+        OdbcDataReader dataReader = cmdSrc.ExecuteReader();
+        int fieldCount = dataReader.FieldCount;
+
+        String fieldSep = null;
+
+        Console.WriteLine("Execute SQL = " + query);
+        Console.WriteLine("Number of columns in select stmt = " + fieldCount);
+
+        sb.Append("create table " + schemaName + "." + tableName);
+        sb.Append("(");
+
+        fieldSep = "  ";
+        using (var schemaTable = dataReader.GetSchemaTable())
+        {
+          foreach (DataRow row in schemaTable.Rows)
+          {
+            string ColumnName      = row.Field<string>("ColumnName");
+            string DataTypeName      = row["DataType"].ToString();
+            short NumericPrecision = row.Field<short>("NumericPrecision");
+            short NumericScale     = row.Field<short>("NumericScale");
+            int ColumnSize         = row.Field<int>("ColumnSize");
+           
+            Console.WriteLine("Column: {0} Type: {1} Precision: {2} Scale: {3} ColumnSize {4}", ColumnName, DataTypeName, NumericPrecision, NumericScale, ColumnSize);
+            
+            if (DataTypeName.Equals("System.Date") || DataTypeName.Equals("System.DateTime") || DataTypeName.Equals("System.DateTime2"))
+            {
+              sb.Append(fieldSep + ColumnName + " " + DataTypeName.Replace("System.", ""));
+              fieldSep = ", ";
+            }
+            else if (DataTypeName.Equals("System.Int16") || DataTypeName.Equals("System.Int32") || DataTypeName.Equals("System.UInt16") || DataTypeName.Equals("System.UInt32") || DataTypeName.Equals("System.SByte"))
+            {
+              sb.Append(fieldSep + ColumnName + " int");
+              fieldSep = ", ";
+            }
+            
+            else if (DataTypeName.Equals("System.Int64") || DataTypeName.Equals("System.UInt64"))
+            {
+              sb.Append(fieldSep + ColumnName + " bigint");
+              fieldSep = ", ";
+            }
+           
+            else if (DataTypeName.Equals("System.Single") || DataTypeName.Equals("System.Decimal") || DataTypeName.Equals("VarNumeric"))
+            {
+                sb.Append(fieldSep + ColumnName + " numeric(38, 4)");
+                fieldSep = ", ";
+            }
+            else if (DataTypeName.Equals("System.StringFixedLength") || DataTypeName.Equals("AnsiStringFixedLength"))
+            {
+              if (ColumnSize == 1)
+              {
+                sb.Append(fieldSep + ColumnName + " char(1)");
+              }
+              else
+              {
+                sb.Append(fieldSep + ColumnName + " char(" + (ColumnSize > NumericPrecision ? ColumnSize : NumericPrecision) + ")");
+              }
+              fieldSep = ", ";
+            }
+            else if (DataTypeName.Equals("System.String") || DataTypeName.Equals("AnsiString"))
+            {
+               if (ColumnSize > 8000)
+               {
+                 sb.Append(fieldSep + ColumnName + " varchar(max)");
+               }
+               else
+               {
+                 sb.Append(fieldSep + ColumnName + " varchar(8000)");
+               }
+               fieldSep = ", ";
+            }
+            else
+            {
+               Console.WriteLine("Unknown datatype = {0}", DataTypeName);
+               sb.Append(fieldSep + ColumnName + " UnknownDataType");
+               fieldSep = ", ";
+            }
+            
+          }
+        }
+        sb.Append(")");
+        sb.Append(";");
+      }
+      catch(Exception e)
+      {
+        Console.WriteLine(e.ToString());
+      }
+      finally
+      {
+        srcConn.Close();
+        cmdDst.CommandText = sb.ToString();
+        cmdDst.ExecuteNonQuery();
+        dstConn.Close();
+      }
+
+    } // ODBCGenCreateTableFromQuery()
+
     public static void OraGenExtTableDDL(String filePath, String filename, String colDelimiter, String recDelimiter, 
                                    String table, String dirObj, String addRecNum, String outputDir)
     {
