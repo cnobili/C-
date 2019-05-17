@@ -74,13 +74,13 @@ class DataTools
     Console.WriteLine();
     Console.WriteLine(">{0} {1} csvFile colDelimiter recDelimiter tableName", PROGRAM_NAME, ACTION_GEN_DDL_BULKINSERT_STMT);
     Console.WriteLine();
-    Console.WriteLine(">{0} {1} srcConnStr srcTable dstConnStr dstTable batchSize", PROGRAM_NAME, ACTION_BULK_COPY_TABLE);
+    Console.WriteLine(">{0} {1} srcConnStr srcTable dstConnStr dstSchema dstTable batchSize", PROGRAM_NAME, ACTION_BULK_COPY_TABLE);
     Console.WriteLine();
-    Console.WriteLine("  Example:\n  DataTools SqlBulkCopyTable \"Integrated Security=SSPI;Initial Catalog=theDatabase;Data Source=theServer;\" sourceTable \"Integrated Security=SSPI;Initial Catalog=theDatabase;Data Source=theServer;\" destinationTable 500000");
+    Console.WriteLine("  Example:\n  DataTools SqlBulkCopyTable \"Integrated Security=SSPI;Initial Catalog=theDatabase;Data Source=theServer;\" sourceTable \"Integrated Security=SSPI;Initial Catalog=theDatabase;Data Source=theServer;\" destinationSchema destinationTable 500000");
     Console.WriteLine();
-    Console.WriteLine(">{0} {1} srcConnStr srcQueryFile dstConnStr dstTable batchSize", PROGRAM_NAME, ACTION_BULKINSERT_QUERY2TABLE);
+    Console.WriteLine(">{0} {1} srcConnStr srcQueryFile dstConnStr dstSchema dstTable batchSize", PROGRAM_NAME, ACTION_BULKINSERT_QUERY2TABLE);
     Console.WriteLine();
-    Console.WriteLine("  Example:\n  DataTools SqlBulkLoadQuery2Table \"Integrated Security=SSPI;Initial Catalog=theDatabase;Data Source=theServer;\" srcQueryFile.sql \"Integrated Security=SSPI;Initial Catalog=theDatabase;Data Source=theServer;\" destinationTable 0");
+    Console.WriteLine("  Example:\n  DataTools SqlBulkLoadQuery2Table \"Integrated Security=SSPI;Initial Catalog=theDatabase;Data Source=theServer;\" srcQueryFile.sql \"Integrated Security=SSPI;Initial Catalog=theDatabase;Data Source=theServer;\" destinationSchema destinationTable 0");
     Console.WriteLine();
     Console.WriteLine(">{0} {1} outputFile delimiter columnHeader(Y|N) fieldsInQuotes(T|F) queryFile server database [user] [pass]", PROGRAM_NAME, ACTION_SQL_EXTRACT_DATA);
     Console.WriteLine();
@@ -276,7 +276,7 @@ class DataTools
     }
     else if ( action.ToUpper().Equals(ACTION_BULK_COPY_TABLE.ToUpper()) )
     {
-      if ( args.Length != 6 )
+      if ( args.Length != 7 )
       {
         Console.WriteLine("\nWrong number of arguments for action = {0}", action);
         Usage();
@@ -286,15 +286,19 @@ class DataTools
       String srcConnStr = args[1];
       String srcTable   = args[2];
       String dstConnStr = args[3];
-      String dstTable   = args[4];
-      int    batchSize  = Convert.ToInt32(args[5]);
+      String dstSchema  = args[4];
+      String dstTable   = args[5];
+      int    batchSize  = Convert.ToInt32(args[6]);
+      String srcQuery   = "select * from " + srcTable;
       
       Console.WriteLine("Bulk Copy Source Table = {0} to destination Table = {1}", srcTable, dstTable);
-      DataLib.DataUtil.BulkCopyTable(srcConnStr, srcTable, dstConnStr, dstTable, batchSize);
+      Console.WriteLine("HERE");
+      DataLib.DataUtil.MSSQLGenCreateTableFromQuery(srcConnStr, dstConnStr, srcQuery, dstSchema, dstTable);
+      DataLib.DataUtil.BulkCopyTable(srcConnStr, srcTable, dstConnStr, dstSchema, dstTable, batchSize);
     }
     else if ( action.ToUpper().Equals(ACTION_BULKINSERT_QUERY2TABLE.ToUpper()) )
     {
-      if ( args.Length != 6 )
+      if ( args.Length != 7 )
       {
         Console.WriteLine("\nWrong number of arguments for action = {0}", action);
         Usage();
@@ -304,12 +308,14 @@ class DataTools
       String srcConnStr   = args[1];
       String srcQueryFile = args[2];
       String dstConnStr   = args[3];
-      String dstTable     = args[4];
-      int    batchSize    = Convert.ToInt32(args[5]);
+      String dstSchema    = args[4];
+      String dstTable     = args[5];
+      int    batchSize    = Convert.ToInt32(args[6]);
       
       Console.WriteLine("Bulk Load destination Table = {0} from source query file = {1}", dstTable, srcQueryFile);
       String srcQuery = DataLib.DataUtil.FileToString(srcQueryFile);
-      DataLib.DataUtil.BulkLoadQuery2Table(srcConnStr, srcQuery, dstConnStr, dstTable, batchSize);
+      DataLib.DataUtil.MSSQLGenCreateTableFromQuery(srcConnStr, dstConnStr, srcQuery,  dstSchema, dstTable);
+      DataLib.DataUtil.BulkLoadQuery2Table(srcConnStr, srcQuery, dstConnStr, dstSchema, dstTable, batchSize);
     }
     else if ( action.ToUpper().Equals(ACTION_SQL_EXTRACT_DATA.ToUpper()) )
     {
@@ -681,7 +687,8 @@ class DataTools
             
       Boolean truncateFlg = args[6].ToUpper() == "TRUNCATE" ? true : false;
       String query = DataLib.DataUtil.FileToString(queryFile);
-            
+      
+      DataLib.DataUtil.ODBCGenCreateTableFromQuery(odbcConnStr, sqlConnStr, query,  schemaName, tableName);      
       Console.WriteLine("Load SQL Server table = {0} from Odbc database", tableName);
       DataLib.DataUtil.OdbcQuery2SqlTable(odbcConnStr, query, sqlConnStr, schemaName, tableName, truncateFlg);
     }
