@@ -2725,7 +2725,7 @@ namespace DataLib
   } // AddAuditInfoToFilesInDir()
   
   /*
-   * GenExcelFromAccess
+   * GenExcelFromMSSQL
    *
    * Create Excel file from a SQL Server table.
    */
@@ -2766,9 +2766,9 @@ namespace DataLib
     for (int i = 0; i < dt.Columns.Count; i++)
     {
       if (i == dt.Columns.Count - 1)
-        wr.Write(dt.Columns[i].ToString().ToUpper().Replace(".", "_")); // replace any periods in column name
+        wr.Write(dt.Columns[i].ToString().Replace(".", "_")); 
       else
-        wr.Write(dt.Columns[i].ToString().ToUpper().Replace(".", "_") + ",");
+        wr.Write(dt.Columns[i].ToString().Replace(".", "_") + ",");
 
     }
     wr.WriteLine();
