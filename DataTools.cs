@@ -54,6 +54,10 @@ class DataTools
   private const String ACTION_FILES_IN_DIR2TABLE                 = "FilesInDir2Table";
   private const String ACTION_GEN_EXCEL_FROM_MSSQL               = "GenExcelFromMSSQL";
   private const String ACTION_GEN_EXCEL_FROM_MSSQL_QUERY         = "GenExcelFromMSSQL_FromQuery";
+  private const String ACTION_COMPRESS_FILE                      = "CompressFile";
+  private const String ACTION_DECOMPRESS_FILE                    = "DeCompressFile";
+  private const String ACTION_ZIP_EXTRACT_TO_DIRECTORY           = "ZipExtractToDirectory";
+  private const String ACTION_ZIP_CREATE_FROM_DIRECTORY          = "ZipCreateFromDirectory";
     
   public static void Usage()
   {
@@ -147,9 +151,25 @@ class DataTools
     Console.WriteLine();
     Console.WriteLine("  Example:\n  DataTools GenExcelFromMSSQL_FromQuery \"Provider=SQLOLEDB;Data Source=theServer;Initial Catalog=theDB;Integrated Security=SSPI;\" query.sql excelFile");
     Console.WriteLine();
+    Console.WriteLine(">{0} {1} fileToCompress destFile deleteFileToCompressFlg(T|F)", PROGRAM_NAME, ACTION_COMPRESS_FILE);
+    Console.WriteLine();
+    Console.WriteLine("  Example:\n  DataTools CompressFile x.csv x.csv.gz F");
+    Console.WriteLine();
+    Console.WriteLine(">{0} {1} fileToDeCompress destFile deleteFileToDecompressFlg(T|F)", PROGRAM_NAME, ACTION_DECOMPRESS_FILE);
+    Console.WriteLine();
+    Console.WriteLine("  Example:\n  DataTools DeCompressFile x.csv.gz x.csv.gz F");
+    Console.WriteLine();
+    Console.WriteLine(">{0} {1} sourceArchiveFileName destinationDirectoryName)", PROGRAM_NAME, ACTION_ZIP_EXTRACT_TO_DIRECTORY);
+    Console.WriteLine();
+    Console.WriteLine("  Example:\n  DataTools ZipExtractToDirectory x.zip c:\\temp");
+    Console.WriteLine();
+    Console.WriteLine(">{0} {1} sourceDirectoryName destinationArchiveFileName)", PROGRAM_NAME, ACTION_ZIP_CREATE_FROM_DIRECTORY);
+    Console.WriteLine();
+    Console.WriteLine("  Example:\n  DataTools ZipCreateFromDirectory c:\\temp x.zip");
+    Console.WriteLine();
     Console.WriteLine("------------------------------------------------------------------------------------------------");
-    Console.WriteLine();    
-    
+    Console.WriteLine();  
+        
   } // Usage()
 
   /*
@@ -970,6 +990,89 @@ class DataTools
       Console.WriteLine("  excelFile  = {0}", excelFile);
                   
       DataLib.DataUtil.GenExcelFromMSSQL(connectStr, selectStmt, excelFile);
+    }
+    else if ( action.ToUpper().Equals(ACTION_COMPRESS_FILE.ToUpper()) )
+    {
+      if (args.Length != 4)
+      {
+        Console.WriteLine("\nWrong number of arguments for action = {0}", action);
+        Usage();
+        return;
+      }
+      
+      String fileToCompress = args[1];
+      String destFile       = args[2];
+      String deleteFlg      = args[3];
+      
+      Console.WriteLine("Calling GzipCompressFile");
+      Console.WriteLine("  fileToCompress = {0}", fileToCompress);
+      Console.WriteLine("  destFile       = {0}", destFile);
+      Console.WriteLine("  deleteFlg      = {0}", deleteFlg);
+             
+      if (deleteFlg.ToUpper().Equals("T"))
+        DataLib.DataUtil.GzipCompressFile(fileToCompress, destFile, true);
+      else
+        DataLib.DataUtil.GzipCompressFile(fileToCompress, destFile, false);
+      
+    }
+    else if ( action.ToUpper().Equals(ACTION_DECOMPRESS_FILE.ToUpper()) )
+    {
+      if (args.Length != 4)
+      {
+        Console.WriteLine("\nWrong number of arguments for action = {0}", action);
+        Usage();
+        return;
+      }
+      
+      String fileToDeCompress = args[1];
+      String destFile         = args[2];
+      String deleteFlg        = args[3];
+      
+      Console.WriteLine("Calling GzipDeCompressFile");
+      Console.WriteLine("  fileToDeCompress = {0}", fileToDeCompress);
+      Console.WriteLine("  destFile         = {0}", destFile);
+      Console.WriteLine("  deleteFlg      = {0}", deleteFlg);
+         
+      if (deleteFlg.ToUpper().Equals("T"))
+        DataLib.DataUtil.GzipDecompressFile(fileToDeCompress, destFile, true);
+      else
+      DataLib.DataUtil.GzipDecompressFile(fileToDeCompress, destFile, false);
+    }
+    else if ( action.ToUpper().Equals(ACTION_ZIP_EXTRACT_TO_DIRECTORY.ToUpper()) )
+    {
+      if (args.Length != 3)
+      {
+        Console.WriteLine("\nWrong number of arguments for action = {0}", action);
+        Usage();
+        return;
+      }
+      
+      String srcArchiveFilePath = args[1];
+      String destDir            = args[2];
+            
+      Console.WriteLine("Calling ZipExtractToDirectory");
+      Console.WriteLine("  srcArchiveFilePath = {0}", srcArchiveFilePath);
+      Console.WriteLine("  destDir = {0}", destDir);
+            
+      DataLib.DataUtil.ZipExtractToDirectory(srcArchiveFilePath, destDir);
+    }
+    else if ( action.ToUpper().Equals(ACTION_ZIP_CREATE_FROM_DIRECTORY.ToUpper()) )
+    {
+      if (args.Length != 3)
+      {
+        Console.WriteLine("\nWrong number of arguments for action = {0}", action);
+        Usage();
+        return;
+      }
+      
+      String srcDir              = args[1];
+      String destArchiveFilePath = args[2];
+            
+      Console.WriteLine("Calling ZipExtractToDirectory");
+      Console.WriteLine("  srcDir = {0}", srcDir);
+      Console.WriteLine("  destArchive = {0}", destArchiveFilePath);
+            
+      DataLib.DataUtil.ZipCreateFromDirectory(srcDir, destArchiveFilePath);
     }
     else
     {

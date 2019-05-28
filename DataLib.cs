@@ -15,6 +15,7 @@ using System.Data.Odbc;
 using System.Data.OleDb;
 using System.Data.SqlClient;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Net.Mail;
 using System.Threading;
@@ -2858,6 +2859,66 @@ namespace DataLib
   
   } // GenExcelFromMSSQL()
   
+
+  public static void GzipCompressFile(string sourceFile, string destFile, Boolean deleteOrigFile = false) 
+  {
+    FileInfo fileToCompress = new FileInfo(sourceFile);
+    Boolean success = false;
+        
+    using (FileStream originalFileStream = fileToCompress.OpenRead())
+    {
+      //using (FileStream compressedFileStream = File.Create(destFile + ".gz"))
+      using (FileStream compressedFileStream = File.Create(destFile))
+      {
+        using (GZipStream compressionStream = new GZipStream(compressedFileStream, CompressionMode.Compress))
+        {
+          originalFileStream.CopyTo(compressionStream);
+        }
+      }
+      FileInfo info = new FileInfo(fileToCompress.FullName + ".gz");
+      Console.WriteLine("Compressed {0} from {1} to {2} bytes.", fileToCompress.Name, fileToCompress.Length.ToString(), info.Length.ToString());
+      success = true;
+    }
+    if (deleteOrigFile && success) File.Delete(fileToCompress.FullName);
+            
+  } // GzipCompressFile()
+
+  public static void GzipDecompressFile(string sourceFile, string destFile, Boolean deleteCompressedFile = false) 
+  { 
+    FileInfo fileToDecompress = new FileInfo(sourceFile);
+    Boolean success = false;
+        
+    using (FileStream originalFileStream = fileToDecompress.OpenRead())
+    {
+      string currentFileName = fileToDecompress.FullName;
+      //string newFileName = currentFileName.Remove(currentFileName.Length - fileToDecompress.Extension.Length);
+      string newFileName = destFile;
+
+      using (FileStream decompressedFileStream = File.Create(newFileName))
+      {
+        using (GZipStream decompressionStream = new GZipStream(originalFileStream, CompressionMode.Decompress))
+        {
+          decompressionStream.CopyTo(decompressedFileStream);
+          Console.WriteLine("Decompressed: {0}", fileToDecompress.Name);
+          success = true;
+        }
+      }
+    }
+    if (deleteCompressedFile && success) File.Delete(fileToDecompress.FullName);
+      
+  } // GzipDecompressFile() 
+  
+  public static void ZipExtractToDirectory(string sourceArchiveFileName, string destinationDirectoryName)
+  {
+    ZipFile.ExtractToDirectory(sourceArchiveFileName, destinationDirectoryName);
+
+  } // ZipExtractToDirectory()
+
+  public static void ZipCreateFromDirectory(string sourceDirectoryName, string destinationArchiveFileName)
+  {
+    ZipFile.CreateFromDirectory(sourceDirectoryName, destinationArchiveFileName);
+
+  } // ZipCreateFromDirectory()
 
 } // DataUtil
 
