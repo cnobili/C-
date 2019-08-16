@@ -159,11 +159,11 @@ class DataTools
     Console.WriteLine();
     Console.WriteLine("  Example:\n  DataTools DeCompressFile x.csv.gz x.csv.gz F");
     Console.WriteLine();
-    Console.WriteLine(">{0} {1} sourceArchiveFileName destinationDirectoryName)", PROGRAM_NAME, ACTION_ZIP_EXTRACT_TO_DIRECTORY);
+    Console.WriteLine(">{0} {1} sourceArchiveFileName destinationDirectoryName", PROGRAM_NAME, ACTION_ZIP_EXTRACT_TO_DIRECTORY);
     Console.WriteLine();
     Console.WriteLine("  Example:\n  DataTools ZipExtractToDirectory x.zip c:\\temp");
     Console.WriteLine();
-    Console.WriteLine(">{0} {1} sourceDirectoryName destinationArchiveFileName)", PROGRAM_NAME, ACTION_ZIP_CREATE_FROM_DIRECTORY);
+    Console.WriteLine(">{0} {1} sourceDirectoryName destinationArchiveFileName", PROGRAM_NAME, ACTION_ZIP_CREATE_FROM_DIRECTORY);
     Console.WriteLine();
     Console.WriteLine("  Example:\n  DataTools ZipCreateFromDirectory c:\\temp x.zip");
     Console.WriteLine();
