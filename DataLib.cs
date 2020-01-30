@@ -2739,6 +2739,7 @@ namespace DataLib
     Console.WriteLine("\nMade the connection to the database");
     
     OleDbCommand cmd = con.CreateCommand();
+    cmd.CommandTimeout = 0;
     //cmd.CommandText = "select * from " + tableName;
     cmd.CommandText = selectStmt;
   
