@@ -789,7 +789,7 @@ class LoadData
               }
               fieldSep = ", ";
             }
-            else if (DataTypeName.Equals("varchar"))
+            else if (DataTypeName.Equals("varchar") || DataTypeName.Equals("nvarchar"))
             {
                if (ColumnSize > 8000)
                {
