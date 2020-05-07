@@ -1143,6 +1143,25 @@ class LoadData
     conn.Close();
   
   } // DropTable()
+  
+  public static void RenameTable(String schema, String tableName, String newTableName, String connectString)
+  {
+    
+    if ( !TableExists(schema, tableName, connectString) ) return;
+    
+    Console.WriteLine("Rename destination table {0}.{1} to {2}.{3}", schema, tableName, schema, newTableName);
+
+    String sqlStmt = "EXEC sp_rename '" + schema + "." + tableName + "', '" + newTableName + "'";
+    SqlCommand cmd = new SqlCommand();
+    SqlConnection conn = new SqlConnection(connectString);
+             
+    conn.Open();
+    cmd.Connection = conn;
+    cmd.CommandText = sqlStmt;
+    cmd.ExecuteNonQuery();
+    conn.Close();
+  
+  } // RenameTable()
     
   public static void CreateTableFromFile(String schema, String tableName, String connectString, string filename, string delim)
   {
