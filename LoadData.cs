@@ -1353,6 +1353,7 @@ class LoadData
     String activeFlg;
     String procOrSqlBlk;
     String dropTable;
+    String origDestTableName;
     
     DbReturnStatus ret = null;
     
@@ -1449,12 +1450,19 @@ class LoadData
           
       numRecs = 0;
       loadDataOutKey = 0;
+      origDestTableName = destTableName;
       
       try
       {
          //ConnectToDb(sourceConnType, sourceDbConnStr);
          
-         if (dropTable.Equals("Y"))
+         if (dropTable.Equals("Y") && sourceConnType.ToUpper().Equals("MSSQL"))
+         {
+           // If MS SQL Server and dropping the table, load first into a temporary table so actual table remains available during the data load
+           destTableName = origDestTableName + "_TEMP";
+           DropTable(destSchemaName, destTableName, destConnStr);
+         }
+         else if (dropTable.Equals("Y"))
          {
            DropTable(destSchemaName, destTableName, destConnStr);
          }
@@ -1466,6 +1474,12 @@ class LoadData
            Console.WriteLine("Calling BulkCopyTable ...");
            ret = BulkCopyTable(sourceDbConnStr, sourceDbQuery, destConnStr, destSchemaName, destTableName, batchSize, loadType);
            LogEnd(logDbConnStr, loadDataOutKey, DateTime.Now, (ret.errMsg == SUCCESS ? SUCCESS : FAILURE), ret.rowsLoaded, (ret.errMsg == SUCCESS ? null : ret.errMsg));
+           
+           if (dropTable.Equals("Y"))
+           {
+             DropTable(destSchemaName, origDestTableName, destConnStr);
+             RenameTable(destSchemaName, destTableName, origDestTableName, destConnStr);
+           }
          }
          else if (sourceConnType.ToUpper().Equals("ODBC"))
          {
