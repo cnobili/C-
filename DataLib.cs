@@ -51,7 +51,11 @@ namespace DataLib
       StreamWriter sw = new StreamWriter(fullPathSchemaINI);
       sw.WriteLine("[{0}]", filename);
       sw.WriteLine("ColNameHeader={0}", colNameHeader);
-      sw.WriteLine("Format=Delimited({0})", delim);
+      
+      if (delim == "0x09")
+        sw.WriteLine("Format=TabDelimited");
+      else
+        sw.WriteLine("Format=Delimited({0})", delim);
       sw.Close();
     
     } // GenSchemaINI()
