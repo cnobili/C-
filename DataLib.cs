@@ -256,7 +256,7 @@ namespace DataLib
 
       Console.WriteLine("\nGenerate create table ...\n");
 
-      String ddl = "Create table " + tableName + "\n" + "( \n";
+      String ddl = "Create table " + schema + "." + tableName + "\n" + "( \n";
 
       for (int i =0; i < colName.Count; i++)
       {
