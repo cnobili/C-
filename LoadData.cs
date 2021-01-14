@@ -4,6 +4,11 @@
  * Table Driven data loads.
  *
  * Craig Nobili
+ * 
+ * Revisions:
+ * 1-14-2021 - Eric Cox
+ * Tighten error handling, use exact precision/scale for numeric columns if creating table.
+ *
  */
 
 using System;
@@ -363,7 +368,10 @@ class LoadData
       dstAfterTableRecs = System.Convert.ToInt32(commandRowCount.ExecuteScalar());
       Console.WriteLine("Destination table aftere row count = {0}", dstAfterTableRecs);
       Console.WriteLine("{0} rows were added.", dstAfterTableRecs - dstBeforeTableRecs);
-
+      
+      ret.retCode = 0;
+      ret.errMsg = SUCCESS;
+      ret.rowsLoaded = dstAfterTableRecs - dstBeforeTableRecs;
     }
     catch (Exception ex)
     {
@@ -371,7 +379,6 @@ class LoadData
       ret.retCode = 1;
       ret.errMsg = ex.Message;
       ret.rowsLoaded = -1;
-      return ret;
     }
     finally
     {
@@ -379,9 +386,6 @@ class LoadData
       bulkCopy.Close();
       sourceConnection.Close();
       destinationConnection.Close();
-      ret.retCode = 0;
-      ret.errMsg = SUCCESS;
-      ret.rowsLoaded = dstAfterTableRecs - dstBeforeTableRecs;
     }
     return ret;
   
@@ -774,7 +778,7 @@ class LoadData
             }
             else if (DataTypeName.Equals("decimal"))
             {
-                sb.Append(fieldSep + ColumnName + " numeric(38, 4)");
+                sb.Append(fieldSep + ColumnName + " numeric(" + NumericPrecision + "," + NumericScale + ")");
                 fieldSep = ", ";
             }
             else if (DataTypeName.Equals("char"))
@@ -1475,7 +1479,7 @@ class LoadData
            ret = BulkCopyTable(sourceDbConnStr, sourceDbQuery, destConnStr, destSchemaName, destTableName, batchSize, loadType);
            LogEnd(logDbConnStr, loadDataOutKey, DateTime.Now, (ret.errMsg == SUCCESS ? SUCCESS : FAILURE), ret.rowsLoaded, (ret.errMsg == SUCCESS ? null : ret.errMsg));
            
-           if (dropTable.Equals("Y"))
+           if (dropTable.Equals("Y") && ret.retCode == 0)
            {
              DropTable(destSchemaName, origDestTableName, destConnStr);
              RenameTable(destSchemaName, destTableName, origDestTableName, destConnStr);
