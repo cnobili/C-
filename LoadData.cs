@@ -771,7 +771,7 @@ class LoadData
             int ColumnSize         = row.Field<int>("ColumnSize");
             Console.WriteLine("Column: {0} Type: {1} Precision: {2} Scale: {3} ColumnSize {4}", ColumnName, DataTypeName, NumericPrecision, NumericScale, ColumnSize);
             
-            if (DataTypeName.Equals("date") || DataTypeName.Equals("datetime") || DataTypeName.Equals("datetime2") || DataTypeName.Equals("int") || DataTypeName.Equals("bigint") || DataTypeName.Equals("tinyint"))
+            if (DataTypeName.Equals("date") || DataTypeName.Equals("datetime") || DataTypeName.Equals("datetime2") || DataTypeName.Equals("int") || DataTypeName.Equals("bigint") || DataTypeName.Equals("tinyint") || DataTypeName.Equals("float"))
             {
               sb.Append(fieldSep + ColumnName + " " + DataTypeName);
               fieldSep = ", ";
