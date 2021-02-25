@@ -136,8 +136,7 @@ class GenPS
         pw.WriteLine("");
         pw.WriteLine("#" + MetricName);
         pw.WriteLine("$destFilename=\"Audit_" + MetricName.Replace(' ', '_').Replace('.', '_') + "_\" + $yyyymm + \".xlsx\"");
-        //pw.WriteLine("$pattern=\"*" + MetricName.Replace(' ', '_').Replace('.', '_') + "*.xlsx\"");
-        pw.WriteLine("$pattern=\"*.xlsx\"");
+        pw.WriteLine("$pattern=\"*" + MetricName.Replace(' ', '_').Replace('.', '_') + "*.xlsx\"");
         pw.WriteLine("");
         pw.WriteLine("$ExcelFiles=Get-ChildItem $pattern -Path $srcDir");
         pw.WriteLine("");
