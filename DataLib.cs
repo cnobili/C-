@@ -1572,6 +1572,99 @@ namespace DataLib
   
   } // BulkLoadQuery2Table()
   
+  public static void SqlQuery2File(String outputfile, String delim, String columnHeader, String fieldsInQuotes, String queryStr, String server, String database, String user , String pass)
+  {
+    String dbConnectStr;
+    StreamWriter pw = null;
+    SqlConnection dbConn = null;
+        
+    if (user == null)
+    {
+      dbConnectStr = "Server=" + server + ";Database=" + database + ";Trusted_Connection=True";
+    }
+    else
+    {
+      dbConnectStr = "Server=" + server + ";Database=" + database + ";user id=" + user + ";password=" + pass;
+    }
+       
+    try
+    {
+      dbConn = new SqlConnection(dbConnectStr);
+      dbConn.Open();
+      Console.WriteLine("Opened database connection");
+      int recs = 0;
+      SqlCommand cmdSQL = new SqlCommand(queryStr, dbConn);
+      cmdSQL.CommandTimeout = 0;
+      SqlDataReader dataReader = cmdSQL.ExecuteReader();
+      int fieldCount = dataReader.FieldCount;
+ 
+      String rec = null;
+      String fieldSep = null;
+      String col = null;
+      int displayCount = 100000;
+
+      Console.WriteLine("Execute SQL = " + queryStr);
+      Console.WriteLine("Number of columns in select stmt = " + fieldCount);
+
+      pw = new StreamWriter(outputfile);
+
+      if (columnHeader.ToUpper().Equals("Y"))
+      {
+        rec = "";
+        fieldSep = "";
+        for (int i = 0; i < fieldCount; i++)
+        {
+          rec += fieldSep;
+          rec += dataReader.GetName(i);
+          fieldSep = delim;
+        }
+        pw.WriteLine(rec);
+      }
+
+      // Iterate through the resultset
+      while (dataReader.Read())
+      {
+        rec = "";
+        fieldSep = "";
+        for (int i = 0; i < fieldCount; i++)
+        {
+          rec += fieldSep;
+          col = dataReader[i].ToString();
+          if (col != null)
+          {
+            if (fieldsInQuotes.ToUpper().Equals("Y"))
+              col = "\"" + col + "\"";
+            rec += col;
+          }
+          else
+          {
+            rec += "";
+          }
+          fieldSep = delim;
+        }
+
+        recs++;
+
+        if (recs % displayCount == 0)
+          Console.WriteLine("Total records written so far = " + recs);
+        pw.WriteLine(rec);
+      }
+
+      Console.WriteLine("\nTotal records written out to file = " + recs);
+
+    }
+    catch(Exception e)
+    {
+      Console.WriteLine(e.ToString());
+    }
+    finally
+    {
+      pw.Close();
+      dbConn.Close();
+    }
+
+  } // SqlQuery2File()
+  
   public static void SqlExtractData(String outputfile, String delim, String columnHeader, Boolean fieldsInQuotes, String queryFile, String server, String database, String user , String pass)
   {
     String dbConnectStr;

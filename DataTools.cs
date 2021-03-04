@@ -29,6 +29,7 @@ class DataTools
   private const String ACTION_GEN_DDL_BULKINSERT_STMT            = "Csv2BulkInsert";
   private const String ACTION_BULK_COPY_TABLE                    = "SqlBulkCopyTable";
   private const String ACTION_BULKINSERT_QUERY2TABLE             = "SqlBulkLoadQuery2Table";
+  private const String ACTION_SQL_QUERY_TO_FILE                  = "SqlQuery2File";
   private const String ACTION_SQL_EXTRACT_DATA                   = "SqlExtractData";
   private const String ACTION_ODBC_EXTRACT_DATA                  = "OdbcExtractData";
   private const String ACTION_ODBC_EXTRACT_DATA_RM_CONTROL_CHARS = "OdbcExtractDataRemoveControlChars";
@@ -85,6 +86,8 @@ class DataTools
     Console.WriteLine(">{0} {1} srcConnStr srcQueryFile dstConnStr dstSchema dstTable batchSize", PROGRAM_NAME, ACTION_BULKINSERT_QUERY2TABLE);
     Console.WriteLine();
     Console.WriteLine("  Example:\n  DataTools SqlBulkLoadQuery2Table \"Integrated Security=SSPI;Initial Catalog=theDatabase;Data Source=theServer;\" srcQueryFile.sql \"Integrated Security=SSPI;Initial Catalog=theDatabase;Data Source=theServer;\" destinationSchema destinationTable 0");
+    Console.WriteLine();
+    Console.WriteLine(">{0} {1} outputFile delimiter columnHeader(Y|N) fieldsInQuotes(T|F) queryStr server database [user] [pass]", PROGRAM_NAME, ACTION_SQL_QUERY_TO_FILE);
     Console.WriteLine();
     Console.WriteLine(">{0} {1} outputFile delimiter columnHeader(Y|N) fieldsInQuotes(T|F) queryFile server database [user] [pass]", PROGRAM_NAME, ACTION_SQL_EXTRACT_DATA);
     Console.WriteLine();
@@ -336,6 +339,34 @@ class DataTools
       String srcQuery = DataLib.DataUtil.FileToString(srcQueryFile);
       DataLib.DataUtil.MSSQLGenCreateTableFromQuery(srcConnStr, dstConnStr, srcQuery,  dstSchema, dstTable);
       DataLib.DataUtil.BulkLoadQuery2Table(srcConnStr, srcQuery, dstConnStr, dstSchema, dstTable, batchSize);
+    }
+    else if ( action.ToUpper().Equals(ACTION_SQL_QUERY_TO_FILE.ToUpper()) )
+    {
+      if ( !(args.Length >= 8 && args.Length <= 10) )
+      {
+        Console.WriteLine("\nWrong number of arguments for action = {0}", action);
+        Usage();
+        return;
+      }
+      
+      String outputFile     = args[1];
+      String delimiter      = args[2];
+      String columnHeader   = args[3];
+      String fieldsInQuotes = args[4];
+      String queryStr       = args[5];
+      String server         = args[6];
+      String database       = args[7];
+      String user           = null;
+      String pass           = null;
+      
+      if (args.Length > 8)
+      {
+        user = args[8];
+        pass = args[9];
+      }
+      
+      Console.WriteLine("MS SQL Extract data, outputFile = {0}", outputFile);
+      DataLib.DataUtil.SqlQuery2File(outputFile, delimiter, columnHeader, fieldsInQuotes, queryStr, server, database, user, pass);
     }
     else if ( action.ToUpper().Equals(ACTION_SQL_EXTRACT_DATA.ToUpper()) )
     {
