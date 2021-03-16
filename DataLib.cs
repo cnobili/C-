@@ -1452,6 +1452,7 @@ namespace DataLib
         //  bulkCopy.ColumnMappings.Add(c.ColumnName, c.ColumnName);
        
         bulkCopy.DestinationTableName = dt.TableName;
+        bulkCopy.BulkCopyTimeout = 0; // no timeout
         try
         {
           bulkCopy.WriteToServer(dt);
@@ -2469,6 +2470,7 @@ namespace DataLib
       Console.WriteLine("\nMade the connection to the flat file {0}", csvFile);
 
       OleDbCommand command = con.CreateCommand();
+      command.CommandTimeout = 0;
       //command.CommandText = "select * from [" + csvFile + "]";
       command.CommandText = "select * from [" + fileWithoutPath + "]";
 
@@ -2497,6 +2499,7 @@ namespace DataLib
           //  bulkCopy.ColumnMappings.Add(c.ColumnName, c.ColumnName);
        
           bulkCopy.DestinationTableName = dt.TableName;
+          bulkCopy.BulkCopyTimeout = 0; // no timeout
           try
           {
             bulkCopy.WriteToServer(dt);
@@ -2598,6 +2601,7 @@ namespace DataLib
           //  bulkCopy.ColumnMappings.Add(c.ColumnName, c.ColumnName);
        
           bulkCopy.DestinationTableName = dt.TableName;
+          bulkCopy.BulkCopyTimeout = 0; // no timeout
           try
           {
             bulkCopy.WriteToServer(dt);
@@ -2706,6 +2710,7 @@ namespace DataLib
           //  bulkCopy.ColumnMappings.Add(c.ColumnName, c.ColumnName);
        
           bulkCopy.DestinationTableName = dt.TableName;
+          bulkCopy.BulkCopyTimeout = 0; // no timeout
           try
           {
             bulkCopy.WriteToServer(dt);
